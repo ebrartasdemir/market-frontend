@@ -1,30 +1,22 @@
-import { Box, FormGroup, FormControlLabel, Checkbox } from "@mui/material";
+import { Box, FormControlLabel, Radio, RadioGroup } from "@mui/material";
 
-export default function FiltersPanel({ options, activeSet, onChange }) {
-  const toggle = (opt) => {
-    const next = new Set(activeSet);
-    next.has(opt) ? next.delete(opt) : next.add(opt);
-    onChange(next);
-  };
-
+export default function FiltersPanel({ options = [], activeValue, onChange }) {
   return (
     <Box>
-      <FormGroup>
+      <RadioGroup
+        value={activeValue}
+        onChange={(e) => onChange(e.target.value)}
+      >
         {options.map((opt) => (
           <FormControlLabel
-            key={opt}
-            control={
-              <Checkbox
-                size="small"
-                checked={activeSet.has(opt)}
-                onChange={() => toggle(opt)}
-              />
-            }
-            label={opt}
+            key={opt.id}
+            value={opt.id}
+            control={<Radio size="small" />}
+            label={opt.name}
             sx={{ "& .MuiFormControlLabel-label": { fontSize: 14 } }}
           />
         ))}
-      </FormGroup>
+      </RadioGroup>
     </Box>
   );
 }

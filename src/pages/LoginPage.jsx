@@ -7,6 +7,8 @@ import {
   Link,
   Divider,
 } from "@mui/material";
+import axios from "axios";
+import { login } from "../api/AuthApi";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -15,10 +17,16 @@ export default function LoginPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login attempt:", form);
-    // TODO: login API çağrısı
+    try {
+      const response = await login(form);
+        console.log("Login successful:", response);
+       window.location.href = "/";
+    } catch (error) {
+      console.error("Login failed:", error);
+    }
+    
   };
 
   return (
@@ -48,8 +56,8 @@ export default function LoginPage() {
         </Typography>
 
         <Typography variant="body2" sx={{ mb: 3 }}>
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" underline="hover">
+          Don't have an account?{" "}
+          <Link href="/register" underline="hover">
             Sign up here
           </Link>
         </Typography>
@@ -89,7 +97,6 @@ export default function LoginPage() {
           </Button>
         </Box>
 
-        {/* Alt linkler */}
       
         <Divider sx={{ my: 3 }} />
 

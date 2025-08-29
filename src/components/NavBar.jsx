@@ -83,11 +83,11 @@ export default function NavBar() {
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <IconButton
-            onClick={(stateOfLogin) => (stateOfLogin ? window.location.href = "/login" : null)}
+            onClick={() => (localStorage.getItem("token") === "" ? window.location.href = "/login" : window.location.href = "/account")}
           >
             <AccountCircleIcon />
           </IconButton>
-          <IconButton>
+          <IconButton onClick={() => (window.location.href = "/cart")}>
             <ShoppingBagIcon />
           </IconButton>
         </Box>

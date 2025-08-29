@@ -57,8 +57,8 @@ export default function ProductCard({ product, onAdd }) {
               variant="contained"
               startIcon={<ShoppingCartIcon />}
               onClick={(e) => {
-                e.stopPropagation(); // detay sayfasına gitmesin
-                onAdd?.(product);
+                e.stopPropagation(); 
+                onAdd?.(product.id);
               }}
               sx={{ pointerEvents: "auto",
                 bgcolor: "black",

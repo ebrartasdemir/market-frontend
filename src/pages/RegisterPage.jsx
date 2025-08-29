@@ -9,10 +9,13 @@ import {
   FormControlLabel,
   Alert,
 } from "@mui/material";
+import { register } from "../api/AuthApi";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
-    name: "",
+    firstName: "",
+    surname:"",
+    phone: "",
     email: "",
     password: "",
     confirm: "",
@@ -28,23 +31,46 @@ export default function RegisterPage() {
 
   const validate = () => {
     const next = {};
-    if (!form.name.trim()) next.name = "Name is required.";
+    if (!form.firstName.trim()) next.name = "Name is required.";
     if (!/^\S+@\S+\.\S+$/.test(form.email)) next.email = "Enter a valid email.";
     if (form.password.length < 6)
       next.password = "Password must be at least 6 characters.";
     if (form.password !== form.confirm)
       next.confirm = "Passwords do not match.";
-    if (!form.terms) next.terms = "You must accept the Terms.";
+ if (!form.surname.trim()) next.surname = "Surname is required.";
+ if (!/^\d{10}$/.test(form.phone)) next.phone = "Enter a valid phone number.";
+ if (!form.terms) next.terms = "You must accept the Terms.";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
     setSubmitted(true);
-    // TODO: signup API çağrısı
-    console.log("Signup:", form);
+    try {
+      const requestBody = {
+        firstName: form.firstName.toLocaleLowerCase(),
+        surname: form.surname.toLocaleLowerCase(),
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+      };
+      await register(requestBody);
+       window.location.href = "/";
+      setForm({
+        firstName: "",
+        surname: "",
+        email: "",
+    password: "",
+        phone: "",
+        confirm: "",
+        terms: false,
+        
+      });
+    } catch (error) {
+      console.error("Signup failed:", error);
+    }
   };
 
   return (
@@ -85,16 +111,26 @@ export default function RegisterPage() {
 
         <Box component="form" onSubmit={handleSubmit} sx={{ textAlign: "left" }}>
           <TextField
-            label="Name"
-            name="name"
+            label="First Name"
+            name="firstName"
             fullWidth
             margin="normal"
-            value={form.name}
+            value={form.firstName}
             onChange={handleChange}
-            error={!!errors.name}
-            helperText={errors.name}
+            error={!!errors.firstName}
+            helperText={errors.firstName}
           />
           <TextField
+            label="Surname"
+            name="surname"
+            fullWidth
+            margin="normal"
+            value={form.surname}
+            onChange={handleChange}
+            error={!!errors.surname}
+            helperText={errors.surname}
+          />
+                <TextField
             label="Email"
             name="email"
             fullWidth
@@ -103,6 +139,17 @@ export default function RegisterPage() {
             onChange={handleChange}
             error={!!errors.email}
             helperText={errors.email}
+          />
+          <TextField
+            label="Phone"
+            name="phone"
+            type="numeric"
+            fullWidth
+            margin="normal"
+            value={form.phone}
+            onChange={handleChange}
+            error={!!errors.phone}
+            helperText={errors.phone}
           />
           <TextField
             label="Password"
