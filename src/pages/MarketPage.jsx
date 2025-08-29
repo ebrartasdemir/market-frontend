@@ -1,63 +1,78 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
-  Box, Grid, Typography, Divider, IconButton, Button, Menu, MenuItem,
-  Drawer, useMediaQuery, Collapse
+  Box,
+  Grid,
+  Typography,
+  Divider,
+  IconButton,
+  Button,
+  Menu,
+  MenuItem,
+  Drawer,
+  useMediaQuery,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import SortIcon from "@mui/icons-material/Sort";
+
 import FiltersPanel from "../components/FilterPanel";
 import ProductCard from "../components/ProductCard";
-import { addToCart, getAllCategories, getAllProducts,getAllProductsByCategory } from "../api/ShopApi";
+import {
+  addToCart,
+  getAllCategories,
+  getAllProducts,
+  getAllProductsByCategory,
+} from "../api/ShopApi";
 
 const MarketPage = () => {
   const isMdUp = useMediaQuery("(min-width:900px)");
 
   const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [rawProducts, setRawProducts] = useState([]); // ham veri
   const [loading, setLoading] = useState(false);
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(true);
-  const [activeCategory, setActiveCategory] = useState(null); // tek kategori id
-  const [sortAnchor, setSortAnchor] = useState(null);
-  const [sortKey, setSortKey] = useState("featured");
+  const [activeCategory, setActiveCategory] = useState(null);
 
-  // Kategorileri çek
-  
+  const [sortAnchor, setSortAnchor] = useState(null);
+  const [sortKey, setSortKey] = useState("featured"); // featured | price-asc | price-desc | title
+
   useEffect(() => {
-    if(localStorage.getItem("token")===""){
-      window.location.href="/login";
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      window.location.href = "/login";
+      return;
     }
+
     const fetchCategories = async () => {
       try {
         setLoading(true);
-    
         const res = await getAllCategories();
-        setCategories(res); 
+        setCategories(res || []);
       } catch (error) {
         console.error("Error fetching categories:", error);
       } finally {
         setLoading(false);
       }
     };
+
     fetchCategories();
   }, []);
 
-  // Ürünleri çek
+  // Ürünleri çek (kategori veya sortKey değiştiğinde yenileriz)
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-         if(activeCategory!=null){
-          const res = await getAllProductsByCategory(activeCategory);
-          setProducts(res);
+        let res;
+        if (activeCategory != null) {
+          res = await getAllProductsByCategory(activeCategory);
+        } else {
+          res = await getAllProducts();
         }
-        else{
-          const res = await getAllProducts();
-          console.log(res);
-          setProducts(res);
-        }
+        setRawProducts(Array.isArray(res) ? res : []);
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {
@@ -65,16 +80,40 @@ const MarketPage = () => {
       }
     };
     fetchProducts();
-  }, [activeCategory, sortKey]);
+  }, [activeCategory]);
+
+  // Basit client-side sıralama
+  const products = useMemo(() => {
+    const arr = [...rawProducts];
+    switch (sortKey) {
+      case "price-asc":
+        arr.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+        break;
+      case "price-desc":
+        arr.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+        break;
+      case "title":
+        arr.sort((a, b) =>
+          String(a.title || "").localeCompare(String(b.title || ""), undefined, { sensitivity: "base" })
+        );
+        break;
+      case "featured":
+      default:
+        // API’den gelen sırayı koru veya isterseniz burada 'featured' mantığı kurun
+        break;
+    }
+    return arr;
+  }, [rawProducts, sortKey]);
+
   const handleAddToCart = async (productId) => {
     try {
-      console.log("Adding to cart:", productId);
-      await addToCart(productId);
+      await addToCart(productId, 1);
     } catch (error) {
       console.error("Error adding to cart:", error);
     }
   };
 
+  // Sol filtre panelinin içeriği
   const Filters = (
     <Box sx={{ width: 280, p: 2 }}>
       <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
@@ -93,21 +132,36 @@ const MarketPage = () => {
     <Box>
       {/* Başlık */}
       <Box sx={{ py: 4 }}>
-        <Typography variant="h3" sx={{ fontWeight: 600, letterSpacing: ".02em" }}>
+        <Typography variant="h3" sx={{ fontWeight: 600, letterSpacing: ".02em", textAlign: "center" }}>
           PRODUCTS
         </Typography>
-        <Typography variant="h6" sx={{ mt: 1, px: 5, color: "text.secondary", textAlign: "center" }}>
-          Shop organic foods & wellness products that fly off our shelves—from full-spectrum sea moss to nutritional supplements.
+        <Typography
+          variant="h6"
+          sx={{ mt: 1, px: 5, color: "text.secondary", textAlign: "center" }}
+        >
+          Shop organic foods & wellness products that fly off our shelves—from
+          full-spectrum sea moss to nutritional supplements.
         </Typography>
       </Box>
 
-      {/* Filter & Sort */}
+      {/* Filter & Sort bar */}
       <Box sx={{ borderTop: 1, borderColor: "divider", borderBottom: 1 }}>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", py: 1, px: 5 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            py: 1,
+            px: 5,
+            gap: 2,
+          }}
+        >
           <Button
             startIcon={<FilterListIcon />}
             endIcon={filtersOpen ? <ExpandLess /> : <ExpandMore />}
-            onClick={() => (isMdUp ? setFiltersOpen(v => !v) : setDrawerOpen(true))}
+            onClick={() =>
+              isMdUp ? setFiltersOpen((v) => !v) : setDrawerOpen(true)
+            }
             sx={{ color: "text.primary", textTransform: "none", fontWeight: 600 }}
           >
             {isMdUp ? (filtersOpen ? "HIDE FILTERS" : "SHOW FILTERS") : "FILTERS"}
@@ -127,52 +181,100 @@ const MarketPage = () => {
             open={Boolean(sortAnchor)}
             onClose={() => setSortAnchor(null)}
           >
-            <MenuItem onClick={() => { setSortKey("featured"); setSortAnchor(null); }}>Featured</MenuItem>
-            <MenuItem onClick={() => { setSortKey("price-asc"); setSortAnchor(null); }}>Price: Low to High</MenuItem>
-            <MenuItem onClick={() => { setSortKey("price-desc"); setSortAnchor(null); }}>Price: High to Low</MenuItem>
-            <MenuItem onClick={() => { setSortKey("title"); setSortAnchor(null); }}>Alphabetical</MenuItem>
+            <MenuItem
+              onClick={() => {
+                setSortKey("featured");
+                setSortAnchor(null);
+              }}
+            >
+              Featured
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                setSortKey("price-asc");
+                setSortAnchor(null);
+              }}
+            >
+              Price: Low to High
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                setSortKey("price-desc");
+                setSortAnchor(null);
+              }}
+            >
+              Price: High to Low
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                setSortKey("title");
+                setSortAnchor(null);
+              }}
+            >
+              Alphabetical
+            </MenuItem>
           </Menu>
         </Box>
       </Box>
 
-      <Box sx={{ py: 3, px: 2, display: "flex" }}>
-        <Box sx={{ flexDirection:"row" }}>
-        <Grid container spacing={2}>
-          {isMdUp && (
-            <Grid item xs={12} md={2}>
-              <Collapse in={filtersOpen} timeout="auto" unmountOnExit>
-                <Box sx={{ pr: 2, borderRight: 1, borderColor: "divider" }}>
-                  {Filters}
-                </Box>
-              </Collapse>
-            </Grid>
+      {/* İçerik: Sol filtre (md+) + Sağ ürünler */}
+      <Box sx={{ px: 2, py: 3 }}>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          {/* Sol: Filtre paneli (md ve üzeri görünür) */}
+          {isMdUp && filtersOpen && (
+            <Box
+              sx={{
+                width: 280,
+                flexShrink: 0,
+                position: "sticky",
+                top: 88, // header yüksekliğinize göre ayarlayın
+                alignSelf: "flex-start",
+                borderRight: 1,
+                borderColor: "divider",
+              }}
+            >
+              {Filters}
+            </Box>
           )}
 
-          <Grid item xs={12} md={isMdUp ? 10 : 12}>
-            <Grid container spacing={2}>
-              {loading ? (
-                <Typography sx={{ m: 2 }}>Loading...</Typography>
-              ) : (
-                products.map(p => (
-                  <Grid item xs={6} 
-                  sm={5} 
-                  md={4}
-                   lg={3} 
-                   key={p.id}>
+          {/* Sağ: Ürün grid'i */}
+          <Box sx={{ flex: 1 }}>
+            {loading ? (
+              <Typography sx={{ m: 2 }}>Loading...</Typography>
+            ) : (
+              <Grid container spacing={2}>
+                {products.map((p) => (
+                  <Grid
+                    item
+                    key={p.id}
+                    xs={12}   // mobil: 1 sütun
+                    sm={6}    // küçük: 2 sütun
+                    md={4}    // orta: 3 sütun
+                    lg={3}    // büyük: 4 sütun
+                  >
                     <ProductCard product={p} onAdd={handleAddToCart} />
                   </Grid>
-                ))
-              )}
-            </Grid>
-          </Grid>
-        </Grid>
+                ))}
+              </Grid>
+            )}
+          </Box>
         </Box>
       </Box>
 
-      {/* Mobil drawer */}
+      {/* Mobil: Drawer filtreleri */}
       <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, py: 1 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Filters</Typography>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            px: 2,
+            py: 1,
+          }}
+        >
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+            Filters
+          </Typography>
           <IconButton onClick={() => setDrawerOpen(false)}>
             <ExpandLess />
           </IconButton>

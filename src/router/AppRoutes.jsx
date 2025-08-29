@@ -10,7 +10,7 @@ const AppRoutes = () => {
     return (
         <Routes> 
             <Route path="/" element={<Layout><MarketPage /></Layout>} />
-            <Route path="/detail" element={<Layout><DetailPage /></Layout>} />
+            <Route path="/detail/:id" element={<Layout><DetailPage /></Layout>} />
             <Route path="/login" element={<Layout><LoginPage /></Layout>} />
             <Route path="/register" element={<Layout><RegisterPage /></Layout>} />
             <Route path="/cart" element={<Layout><CartPage /></Layout>} />

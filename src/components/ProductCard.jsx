@@ -2,7 +2,7 @@ import { Card, CardActionArea, CardMedia, CardContent, Typography, Box, Button }
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 
 export default function ProductCard({ product, onAdd }) {
-  const goDetail = () => { window.location.href = "/detail"; };
+  const goDetail = () => { window.location.href = `/detail/${product.id}`; };
 
   return (
     <Card
@@ -27,13 +27,13 @@ export default function ProductCard({ product, onAdd }) {
         <Box sx={{ position: "relative" }}>
           <CardMedia
             component="img"
-            image={product.img}
+            image={product.imagePath}
             alt={product.title}
             className="media"
             sx={{
               width: "100%",
               aspectRatio: "4 / 3",
-              objectFit: "cover",
+              objectFit: "contain",
               transition: "transform .25s ease",
             }}
           />
@@ -49,7 +49,7 @@ export default function ProductCard({ product, onAdd }) {
               pb: 1.5,
               opacity: 0,
               transition: "opacity .2s ease",
-              pointerEvents: "none", // hover'da tıklama yine üst kapsayıcıya gider
+              pointerEvents: "none", 
             }}
           >
             <Button
